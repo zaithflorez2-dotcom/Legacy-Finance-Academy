@@ -2,10 +2,431 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Legacy Finance Academy</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #0c331e;
+            --primary-light: #164e30;
+            --accent: #d4af37;
+            --accent-hover: #bda031;
+            --bg: #f4f7f5;
+            --card-bg: #ffffff;
+            --text: #1e2d24;
+            --text-muted: #53685b;
+            --border: #c8ded3;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 60px; }
+        header { background-color: var(--primary); color: white; padding: 20px; text-align: center; border-bottom: 4px solid var(--accent); position: relative; }
+        header h1 { font-size: 1.8rem; margin-bottom: 5px; color: var(--accent); }
+        .profile-selector { display: flex; justify-content: center; gap: 10px; padding: 15px; background: #e1e9e5; overflow-x: auto; }
+        .profile-btn { background: white; border: 2px solid var(--border); padding: 10px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; color: var(--primary); white-space: nowrap; transition: 0.3s; }
+        .profile-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .container { padding: 15px; max-width: 800px; margin: auto; }
+        .card { background: var(--card-bg); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        h2 { color: var(--primary); margin-bottom: 15px; font-size: 1.4rem; border-left: 4px solid var(--accent); padding-left: 8px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-muted); }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; }
+        input:focus, select:focus { border-color: var(--primary); outline: none; }
+        button.btn { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.3s; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        button.btn:hover { background: var(--primary-light); }
+        button.btn-ia { background: linear-gradient(135deg, #4a00e0, #8e2de2); border: none; }
+        button.btn-ia:hover { opacity: 0.9; }
+        .result-box { background: #eef5f1; border-left: 5px solid var(--primary); padding: 15px; border-radius: 6px; margin-top: 15px; display: none; }
+        .ia-report { background: #f3ebff; border-left: 5px solid #8e2de2; padding: 15px; border-radius: 6px; margin-top: 15px; display: none; font-style: italic; color: #3b0082; }
+        .grid-lessons { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .lesson-card { border: 1px solid var(--border); padding: 15px; border-radius: 8px; background: #fafafa; }
+        .lesson-card h3 { color: var(--primary-light); margin-bottom: 8px; font-size: 1.1rem; }
+        .quiz-option { display: block; background: #f0f0f0; padding: 12px; margin-bottom: 10px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+        .quiz-option:hover { background: #e5e5e5; }
+        .quiz-option.selected { background: #fff9e6; border-color: var(--accent); font-weight: bold; }
+        .badge-display { text-align: center; margin-top: 15px; font-size: 1.2rem; font-weight: bold; color: var(--primary); display: none; }
+        .chat-toggle { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid var(--accent); z-index: 999; }
+        .chat-box { position: fixed; bottom: 90px; right: 20px; width: calc(100% - 40px); max-width: 360px; height: 400px; background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border: 2px solid var(--primary); display: none; flex-direction: column; overflow: hidden; z-index: 999; }
+        .chat-header { background: var(--primary); color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent); }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.95rem; background: #f9f9f9; }
+        .msg { padding: 10px 14px; border-radius: 8px; max-width: 80%; line-height: 1.4; }
+        .msg.user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 1px; }
+        .msg.ia { background: #eef2f0; color: var(--text); align-self: flex-start; border-bottom-left-radius: 1px; border: 1px solid var(--border); }
+        .chat-input-area { display: flex; padding: 10px; border-top: 1px solid var(--border); background: white; }
+        .chat-input-area input { flex: 1; margin-bottom: 0; padding: 10px; border-radius: 6px 0 0 6px; border-right: none; }
+        .chat-input-area button { background: var(--primary); color: white; border: none; padding: 0 15px; border-radius: 0 6px 6px 0; font-weight: bold; cursor: pointer; }
+        .config-ia { font-size: 0.8rem; text-align: center; color: var(--text-muted); margin-top: 10px; cursor: pointer; text-decoration: underline; }
+        .footer-banner { text-align: center; padding: 15px; font-size: 0.8rem; color: var(--text-muted); background: #eaeaea; margin-top: 20px; border-top: 1px solid #ddd; }
+    </style>
 </head>
 <body>
-    <h1>¡Hola Profe! Este es el prototipo de Legacy Finance Academy</h1>
-    <p>Estamos usando IA para el proyecto de Crea y Emprende.</p>
+
+    <header>
+        <h1 id="main-title">Legacy Finance Academy</h1>
+        <p id="main-subtitle">Aprende a dominar tu dinero paso a paso</p>
+    </header>
+
+    <div class="profile-selector">
+        <button class="profile-btn active" onclick="setProfile('junior')">👶 Modo Junior</button>
+        <button class="profile-btn" onclick="setProfile('emprende')">🚀 Modo Emprendedor</button>
+        <button class="profile-btn" onclick="setProfile('inversion')">💼 Modo Inversionista</button>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2 id="title-lessons">Tus Clases Disponibles</h2>
+            <div class="grid-lessons" id="lessons-container">
+                </div>
+        </div>
+
+        <div class="card">
+            <h2 id="title-budget">Presupuesto Inteligente 50/30/20</h2>
+            <label for="budget-income">Tus Ingresos Mensuales Totales (Soles):</label>
+            <input type="number" id="budget-income" value="100" min="0" placeholder="Ej. 100 o 1500">
+            
+            <button class="btn" onclick="calculateBudget()">📊 Calcular Distribución</button>
+            <button class="btn btn-ia" onclick="getAIReport()">🪄 Recibir Diagnóstico Coach IA</button>
+
+            <div class="result-box" id="budget-result"></div>
+            <div class="ia-report" id="budget-ia-report"></div>
+            <div style="margin-top: 15px;"><canvas id="budgetChart" style="max-height: 200px; display:none;"></canvas></div>
+        </div>
+
+        <div class="card">
+            <h2 id="title-compound">Simulador de Interés Compuesto</h2>
+            <label for="compound-principal">Monto Base de Ahorro Inicial (S/):</label>
+            <input type="number" id="compound-principal" value="50">
+            
+            <label for="compound-rate" id="label-rate">Tasa de Ahorro / Interés Anual (%):</label>
+            <input type="number" id="compound-rate" value="7">
+
+            <label for="compound-years">Tiempo de Espera (Años):</label>
+            <input type="number" id="compound-years" value="5" min="1" max="50">
+
+            <button class="btn" onclick="calculateCompound()">📈 Simular Crecimiento Futuro</button>
+            <div class="result-box" id="compound-result"></div>
+            <div style="margin-top: 15px;"><canvas id="compoundChart" style="max-height: 220px; display:none;"></canvas></div>
+        </div>
+
+        <div class="card">
+            <h2 id="title-quiz">Test de Nivelación Financiera</h2>
+            <div id="quiz-container">
+                </div>
+            <button class="btn" id="btn-submit-quiz" onclick="evaluateQuiz()" style="margin-top:15px;">🎓 Evaluar Mis Respuestas</button>
+            <div class="badge-display" id="quiz-badge"></div>
+        </div>
+    </div>
+
+    <div class="chat-toggle" onclick="toggleChat()">💬</div>
+    <div class="chat-box" id="chatBox">
+        <div class="chat-header">
+            <span>🤖 Mentor Financiero IA</span>
+            <span style="cursor:pointer;" onclick="toggleChat()">✖</span>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="msg ia" id="chat-welcome">¡Hola! Soy tu mentor financiero inteligente. ¿Tienes alguna pregunta sobre dinero o cómo armar tu presupuesto?</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Pregúntame algo..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+            <button onclick="sendChatMessage()">Enviar</button>
+        </div>
+        <div class="config-ia" onclick="promptApiKey()">⚙️ Configurar clave API real (Opcional)</div>
+    </div>
+
+    <div class="footer-banner">
+        <strong>Prototipo Tecnológico Oficial - Legacy Finance Academy</strong><br>
+        Desarrollado con IA para el concurso Crea y Emprende • Costo de Servidores: S/ 0.00 (Vercel/GitHub Pages)
+    </div>
+
+    <script>
+        let currentProfile = 'junior';
+        let budgetChartInstance = null;
+        let compoundChartInstance = null;
+        let apiKeyGemini = localStorage.getItem('gemini_api_key') || "";
+
+        const dataContent = {
+            junior: {
+                subtitle: "¡Aprende a manejar tus propinas y misiones de ahorro de forma divertida!",
+                lessons: [
+                    { t: "💰 ¿Qué es el dinero realmente?", d: "No es magia. Es un papel de intercambio que ganamos cuando aportamos valor o ayudamos haciendo labores." },
+                    { t: "🐷 El secreto de la alcancía inteligente", d: "Cuando recibas propina, no te la gastes toda en dulces. Guarda una parte fija para tus metas grandes (juegos, juguetes)." },
+                    { t: "⚖️ Deseos vs Necesidades", d: "Una necesidad es el almuerzo o tus cuadernos del colegio. Un deseo es un chocolate o un skin de videojuego. ¡Primero lo importante!" }
+                ],
+                quiz: [
+                    { q: "Si recibes una propina de S/ 20 por tu cumpleaños, ¿qué es lo más inteligente?", o: ["Gastarlo todo en golosinas ese mismo día", "Guardar al menos S/ 10 en tu alcancía para tus metas", "Prestarle a un amigo sin cobrarle"], a: 1 },
+                    { q: "¿Cuál de estos ejemplos representa una NECESIDAD real?", o: ["Un juguete nuevo", "Tus útiles de la escuela", "Un helado de chocolate"], a: 1 }
+                ]
+            },
+            emprende: {
+                subtitle: "Optimiza los costos de tu negocio escolar y multiplica tus ganancias.",
+                lessons: [
+                    { t: "📊 Estructura de Costos Reales", d: "Para vender un producto, debes calcular cuánto gastas en insumos, pasajes y empaques. ¡Si no calculas, pierdes dinero!" },
+                    { t: "🚀 Capital de Trabajo básico", d: "El dinero inicial necesario para comprar mercadería antes de abrir. Nunca te gastes el capital, solo reinviértelo." },
+                    { t: "📣 Flujo de Caja Simple", d: "Anota cada sol que entra por ventas y cada sol que sale para comprar stock. Tu ganancia neta es la diferencia real." }
+                ],
+                quiz: [
+                    { q: "Si hacer un producto te cuesta S/ 3 en insumos y lo vendes a S/ 5, ¿cuánto es tu ganancia neta por unidad?", o: ["S/ 5.00", "S/ 3.00", "S/ 2.00"], a: 2 },
+                    { q: "¿Qué pasa si te gastas el 'Capital de Trabajo' de tu negocio?", o: ["El negocio crece más rápido", "No tendrás dinero para comprar más insumos y quebrarás", "No pasa nada porque las ventas siguen solas"], a: 1 }
+                ]
+            },
+            inversion: {
+                subtitle: "Haz que tu dinero trabaje duro para ti mediante el poder del interés compuesto.",
+                lessons: [
+                    { t: "📈 El Interés Compuesto explicado", d: "Consiste en reinvertir los intereses ganados para que se sumen al capital. Así, el dinero crece como bola de nieve en el tiempo." },
+                    { t: "🏦 Bancos vs Cajas Municipales", d: "Compara siempre la TREA (Tasa de Rendimiento Efectiva Anual). Las cajas rurales suelen pagar más por tus ahorros fijos." },
+                    { t: "🛡️ Diversificación del Riesgo", d: "No pongas todos tus huevos en la misma canasta. Invierte en diferentes opciones para proteger tu capital de pérdidas." }
+                ],
+                quiz: [
+                    { q: "¿Qué significa que el interés sea 'compuesto'?", o: ["Que los intereses ganados se retiran cada mes", "Que los intereses se suman al capital para generar nuevos intereses", "Que pagas el doble de comisión al banco"], a: 2 },
+                    { q: "¿Qué tasa debes mirar para saber cuánto vas a ganar realmente en una cuenta de ahorros?", o: ["La TCEA", "La TREA", "La tasa de inflación básica"], a: 1 }
+                ]
+            }
+        };
+
+        function setProfile(prof) {
+            currentProfile = prof;
+            document.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('main-subtitle').innerText = dataContent[prof].subtitle;
+            
+            // Cargar clases
+            const container = document.getElementById('lessons-container');
+            container.innerHTML = "";
+            dataContent[prof].lessons.forEach(l => {
+                container.innerHTML += `<div class="lesson-card"><h3>${l.t}</h3><p>${l.d}</p></div>`;
+            });
+
+            // Cargar Test
+            const quizContainer = document.getElementById('quiz-container');
+            quizContainer.innerHTML = "";
+            dataContent[prof].quiz.forEach((q, qIdx) => {
+                let optionsHtml = "";
+                q.o.forEach((opt, oIdx) => {
+                    optionsHtml += `<div class="quiz-option" data-q="${qIdx}" data-o="${oIdx}" onclick="selectOption(${qIdx}, ${oIdx}, this)">${opt}</div>`;
+                });
+                quizContainer.innerHTML += `<div style="margin-bottom:15px;"><p style="font-weight:bold; margin-bottom:8px;">${qIdx+1}. ${q.q}</p>${optionsHtml}</div>`;
+            });
+
+            // Limpiar cajas anteriores
+            document.getElementById('budget-result').style.display = 'none';
+            document.getElementById('budget-ia-report').style.display = 'none';
+            document.getElementById('compound-result').style.display = 'none';
+            document.getElementById('quiz-badge').style.display = 'none';
+            if(budgetChartInstance) document.getElementById('budgetChart').style.display = 'none';
+            if(compoundChartInstance) document.getElementById('compoundChart').style.display = 'none';
+            
+            // Cambiar textos de bienvenida del Chatbot según la edad elegida
+            let welcomeMsg = "¡Hola! Soy tu asesor financiero inteligente. ¿En qué puedo ayudarte hoy?";
+            if(prof === 'junior') welcomeMsg = "¡Hola pequeñ@ crack! Soy tu chanchito virtual. ¡Pregúntame lo que quieras sobre propinas o cómo ahorrar para tus juguetes!";
+            if(prof === 'emprende') welcomeMsg = "¡Hola socio! Estoy listo para ayudarte a calcular los costos de tu negocio y multiplicar tus ganancias. ¿Qué revisamos hoy?";
+            if(prof === 'inversion') welcomeMsg = "Saludos estimad@ inversionista. Estoy configurado para optimizar portafolios e interés compuesto. Indique su consulta financiera.";
+            document.getElementById('chat-welcome').innerText = welcomeMsg;
+        }
+
+        function selectOption(qIdx, oIdx, element) {
+            const options = element.parentElement.querySelectorAll('.quiz-option');
+            options.forEach(o => o.classList.remove('selected'));
+            element.classList.add('selected');
+            element.parentElement.setAttribute('data-selected', oIdx);
+        }
+
+        function evaluateQuiz() {
+            const questions = document.getElementById('quiz-container').children;
+            let score = 0;
+            let total = dataContent[currentProfile].quiz.length;
+
+            for(let i=0; i<total; i++) {
+                const qDiv = questions[i];
+                const selected = qDiv.getAttribute('data-selected');
+                if(selected == dataContent[currentProfile].quiz[i].a) {
+                    score++;
+                }
+            }
+
+            const badge = document.getElementById('quiz-badge');
+            badge.style.display = 'block';
+            
+            if(score === total) {
+                badge.innerHTML = `🟢 ¡Puntaje Perfecto! Recibes el <strong>SELLO LEGADO FINANCIERO</strong> de platino. ¡Eres un experto!`;
+                badge.style.color = '#0c331e';
+            } else if (score > 0) {
+                badge.innerHTML = `🟡 ¡Buen intento! Recibes el <strong>SELLO BROTE FINANCIERO</strong>. Sigue leyendo las clases para mejorar.`;
+                badge.style.color = '#bda031';
+            } else {
+                badge.innerHTML = `🔴 Recibes el <strong>SELLO SEMILLA FINANCIERO</strong>. ¡No te rindas! Vuelve a repasar las lecciones de la academia.`;
+                badge.style.color = '#a32a2a';
+            }
+        }
+
+        function calculateBudget() {
+            const income = parseFloat(document.getElementById('budget-income').value) || 0;
+            if(income <= 0) return alert("Por favor pon un monto de dinero válido y mayor a cero.");
+
+            const nec = income * 0.50;
+            const des = income * 0.30;
+            const aho = income * 0.20;
+
+            const resBox = document.getElementById('budget-result');
+            resBox.style.display = 'block';
+            resBox.innerHTML = `
+                <p><strong>Distribución Estratégica (Fórmula 50/30/20):</strong></p>
+                <ul>
+                    <li>🛠️ <strong>Necesidades (50%):</strong> S/ ${nec.toFixed(2)}</li>
+                    <li>🍿 <strong>Deseos y Gustos (30%):</strong> S/ ${des.toFixed(2)}</li>
+                    <li>🐷 <strong>Ahorro Obligatorio (20%):</strong> S/ ${aho.toFixed(2)}</li>
+                </ul>
+            `;
+
+            // Dibujar gráfico dinámico
+            document.getElementById('budgetChart').style.display = 'block';
+            if(budgetChartInstance) budgetChartInstance.destroy();
+            
+            const ctx = document.getElementById('budgetChart').getContext('2d');
+            budgetChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Necesidades', 'Deseos', 'Ahorro'],
+                    datasets: [{
+                        data: [nec, des, aho],
+                        backgroundColor: ['#0c331e', '#d4af37', '#c8ded3']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function calculateCompound() {
+            const principal = parseFloat(document.getElementById('compound-principal').value) || 0;
+            const rate = (parseFloat(document.getElementById('compound-rate').value) || 0) / 100;
+            const years = parseInt(document.getElementById('compound-years').value) || 1;
+
+            let labels = [];
+            let dataPoints = [];
+            let currentBalance = principal;
+
+            labels.push("Inicio");
+            dataPoints.push(principal);
+
+            for(let i = 1; i <= years; i++) {
+                currentBalance = currentBalance * (1 + rate);
+                labels.push(`Año ${i}`);
+                dataPoints.push(currentBalance.toFixed(2));
+            }
+
+            const compBox = document.getElementById('compound-result');
+            compBox.style.display = 'block';
+            compBox.innerHTML = `💸 Al finalizar los <strong>${years} años</strong>, tu dinero acumulado total será de: <strong>S/ ${currentBalance.toFixed(2)}</strong> (Ganaste un extra de S/ ${(currentBalance - principal).toFixed(2)} puros gracias al interés compuesto).`;
+
+            document.getElementById('compoundChart').style.display = 'block';
+            if(compoundChartInstance) compoundChartInstance.destroy();
+
+            const ctx = document.getElementById('compoundChart').getContext('2d');
+            compoundChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Evolución del Capital (Sores)',
+                        data: dataPoints,
+                        borderColor: '#0c331e',
+                        backgroundColor: 'rgba(12, 51, 30, 0.1)',
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // COACH INTELIGENTE LOCAL (AUTÓNOMO PARA EXPOSICIONES SIN INTERNET)
+        function getAIReport() {
+            const income = parseFloat(document.getElementById('budget-income').value) || 0;
+            if(income <= 0) return alert("Primero calcula un presupuesto válido para activar el Coach.");
+            
+            calculateBudget(); // Asegurar cálculos
+            const nec = income * 0.50;
+            const des = income * 0.30;
+            const aho = income * 0.20;
+
+            const reportBox = document.getElementById('budget-ia-report');
+            reportBox.style.display = 'block';
+            reportBox.innerHTML = "🪄 <em>Analizando datos financieros del usuario con IA...</em>";
+
+            setTimeout(() => {
+                let consejo = "";
+                if(currentProfile === 'junior') {
+                    consejo = `¡Hola crack! Con tus S/ ${income} de ingreso básico, la regla dice que debes guardar S/ ${aho.toFixed(2)} directo en tu chanchito y no tocarlo. No te dejes tentar por los chocolates a la salida del colegio. ¡Si mantienes este ritmo, a fin de año te compras el juego que tanto querías para tu consola sin pedir prestado!`;
+                } else if(currentProfile === 'emprende') {
+                    consejo = `Análisis de Negocio EPT: Estás manejando un flujo de S/ ${income}. Separar S/ ${aho.toFixed(2)} como reserva de emergencia es vital para tu stock. Te aconsejo reducir ese 30% de deseos (S/ ${des.toFixed(2)}) e invertirlo directamente en comprar más mercadería al por mayor para mejorar tu margen de ganancia neta.`;
+                } else {
+                    consejo = `Reporte de Portafolio Avanzado: Disponer de S/ ${aho.toFixed(2)} mensuales dedicados al ahorro constante te permitirá aprovechar oportunidades de inversión a plazo fijo. Te sugiero investigar las tasas de rendimiento (TREA) de las cajas rurales de la región, ya que rinden el triple de un banco comercial común.`;
+                }
+                reportBox.innerHTML = `<strong>🔮 Diagnóstico del Coach IA:</strong> <br>${consejo}`;
+            }, 800);
+        }
+
+        // MANEJO DEL CHATBOT E INTEGRACIÓN CON LA API REAL DE GEMINI
+        function toggleChat() {
+            const chat = document.getElementById('chatBox');
+            chat.style.display = chat.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function promptApiKey() {
+            let key = prompt("Pega aquí tu API Key secreta de Google Gemini (Dejar vacío para usar el Modo Simulado local):", apiKeyGemini);
+            if(key !== null) {
+                apiKeyGemini = key.trim();
+                localStorage.setItem('gemini_api_key', apiKeyGemini);
+                alert(apiKeyGemini ? "¡API Key guardada con éxito! El chat ahora responderá con Inteligencia Artificial real." : "Modo IA local reactivado.");
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const txt = input.value.trim();
+            if(!txt) return;
+
+            const msgContainer = document.getElementById('chatMessages');
+            
+            // Mensaje de usuario
+            msgContainer.innerHTML += `<div class="msg user">${txt}</div>`;
+            input.value = "";
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+
+            // Mensaje de carga IA
+            const loadingId = "load-" + Date.now();
+            msgContainer.innerHTML += `<div class="msg ia" id="${loadingId}"> Pensando...</div>`;
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+
+            if (apiKeyGemini) {
+                // LLAMADA EN VIVO A LA API DE GEMINI REAL
+                try {
+                    let promptInstrucciones = `Eres un mentor financiero experto y amigable de la plataforma Legacy Finance Academy para escolares de secundaria de Perú. El usuario está usando el modo: ${currentProfile}. Responde de forma muy concisa, motivadora, usando jerga financiera peruana amigable (Soles, ahorro, emprendimiento) y adecuada al perfil. Pregunta del alumno: ${txt}`;
+                    
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKeyGemini}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: promptInstrucciones }] }]
+                        })
+                    });
+                    const data = await response.json();
+                    let replyText = data.candidates[0].content.parts[0].text;
+                    document.getElementById(loadingId).innerText = replyText;
+                } catch (error) {
+                    document.getElementById(loadingId).innerText = "Ups, bro. Hubo un problema al conectar con la API de Gemini. Revisa que tu clave esté bien puesta o que tengas conexión a internet.";
+                }
+            } else {
+                // RESPUESTAS LOCALES SIMULADAS AUTOMÁTICAS
+                setTimeout(() => {
+                    let replyText = "¡Qué gran pregunta, socio! En finanzas, lo primero que debes hacer es dominar tus costos y registrar cada Sol en tu libreta. ¿Qué te parece si probamos ingresando tus datos en el simulador de arriba para analizarlo mejor?";
+                    if(currentProfile === 'junior') replyText = "¡Oye! Esa duda está genial. Recuerda que ahorrar significa guardar una moneda hoy para tener un tesoro mañana. ¡No te rindas con tu alcancía!";
+                    document.getElementById(loadingId).innerText = replyText;
+                    msgContainer.scrollTop = msgContainer.scrollHeight;
+                }, 1000);
+            }
+        }
+
+        // Inicializar la primera carga
+        setProfile('junior');
+    </script>
 </body>
 </html>
